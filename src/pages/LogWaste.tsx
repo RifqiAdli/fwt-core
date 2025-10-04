@@ -1,5 +1,5 @@
 import { useState, FormEvent, useRef } from 'react';
-import { Upload, Camera, Check, Loader2, Sparkles } from 'lucide-react';
+import { Upload, Camera, Check, Loader2, Sparkles, Edit2, Trash2, Plus, X, Save } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
@@ -27,6 +27,12 @@ export function LogWaste() {
   const [aiResults, setAiResults] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [modelLoading, setModelLoading] = useState(false);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editForm, setEditForm] = useState({
+    name: '',
+    quantity: '',
+    category: '',
+  });
 
   const categories = [
     { value: 'Vegetables', label: 'Vegetables' },
@@ -268,6 +274,85 @@ export function LogWaste() {
     }
   };
 
+  const handleAddItem = () => {
+    if (!aiResults) {
+      setAiResults({ items: [] });
+    }
+    
+    const newItem = {
+      name: 'New Item',
+      quantity: 100,
+      category: 'Other',
+      confidence: 0,
+      originalLabel: 'Manual entry',
+    };
+    
+    setAiResults((prev: any) => ({
+      items: [...(prev?.items || []), newItem]
+    }));
+    
+    setEditingIndex(aiResults?.items?.length || 0);
+    setEditForm({
+      name: 'New Item',
+      quantity: '100',
+      category: 'Other',
+    });
+  };
+
+  const handleEditItem = (index: number) => {
+    const item = aiResults.items[index];
+    setEditingIndex(index);
+    setEditForm({
+      name: item.name,
+      quantity: item.quantity.toString(),
+      category: item.category,
+    });
+  };
+
+  const handleSaveEdit = (index: number) => {
+    if (!editForm.name.trim() || !editForm.quantity || Number(editForm.quantity) <= 0) {
+      showToast('Please fill in all fields correctly', 'error');
+      return;
+    }
+
+    const updatedItems = [...aiResults.items];
+    updatedItems[index] = {
+      ...updatedItems[index],
+      name: editForm.name,
+      quantity: Number(editForm.quantity),
+      category: editForm.category,
+    };
+
+    setAiResults({ items: updatedItems });
+    setEditingIndex(null);
+    showToast('Item updated successfully', 'success');
+  };
+
+  const handleCancelEdit = () => {
+    // If it's a new item that hasn't been saved, remove it
+    if (editingIndex !== null && aiResults.items[editingIndex].name === 'New Item' && editForm.name === 'New Item') {
+      handleDeleteItem(editingIndex);
+    }
+    setEditingIndex(null);
+    setEditForm({ name: '', quantity: '', category: '' });
+  };
+
+  const handleDeleteItem = (index: number) => {
+    const updatedItems = aiResults.items.filter((_: any, i: number) => i !== index);
+    
+    if (updatedItems.length === 0) {
+      setAiResults(null);
+      showToast('All items removed', 'info');
+    } else {
+      setAiResults({ items: updatedItems });
+      showToast('Item deleted successfully', 'success');
+    }
+    
+    if (editingIndex === index) {
+      setEditingIndex(null);
+    }
+  };
+
   const handleAiSubmit = async () => {
     if (!aiResults) return;
 
@@ -394,21 +479,6 @@ export function LogWaste() {
 
       {activeTab === 'ai' && (
         <div className="space-y-6">
-          {/* Info Banner */}
-          <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-            <div className="flex items-start gap-3">
-              <Sparkles className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
-              <div>
-                <h3 className="font-semibold text-green-900 dark:text-green-100 mb-1">
-                  Powered by TensorFlow.js
-                </h3>
-                <p className="text-sm text-green-700 dark:text-green-300">
-                  100% free • No API key needed • Works offline • Privacy-focused (runs in your browser)
-                </p>
-              </div>
-            </div>
-          </div>
-
           <Card>
             <CardHeader>
               <CardTitle>Upload Image for AI Analysis</CardTitle>
@@ -507,10 +577,22 @@ export function LogWaste() {
           {aiResults && (
             <Card>
               <CardHeader>
-                <CardTitle>AI Analysis Results</CardTitle>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                  {aiResults.items.length} item{aiResults.items.length > 1 ? 's' : ''} detected • Review and confirm below
-                </p>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle>AI Analysis Results</CardTitle>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                      {aiResults.items.length} item{aiResults.items.length > 1 ? 's' : ''} detected • Review and edit as needed
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    onClick={handleAddItem}
+                    className="flex items-center gap-2"
+                  >
+                    <Plus size={16} />
+                    Add Item
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3 mb-4">
@@ -519,39 +601,100 @@ export function LogWaste() {
                       key={index}
                       className="p-4 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 rounded-lg hover:shadow-md transition-all border border-gray-200 dark:border-gray-600"
                     >
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <p className="font-semibold text-gray-900 dark:text-white text-lg">
-                              {item.name}
+                      {editingIndex === index ? (
+                        <div className="space-y-3">
+                          <Input
+                            label="Item Name"
+                            value={editForm.name}
+                            onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                            placeholder="Enter item name"
+                          />
+                          <Input
+                            type="number"
+                            label="Quantity (grams)"
+                            value={editForm.quantity}
+                            onChange={(e) => setEditForm({ ...editForm, quantity: e.target.value })}
+                            placeholder="Enter quantity"
+                            min="1"
+                          />
+                          <Select
+                            label="Category"
+                            options={categories}
+                            value={editForm.category}
+                            onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
+                          />
+                          <div className="flex gap-2 pt-2">
+                            <Button
+                              variant="primary"
+                              onClick={() => handleSaveEdit(index)}
+                              className="flex-1 flex items-center justify-center gap-2"
+                            >
+                              <Save size={16} />
+                              Save
+                            </Button>
+                            <Button
+                              variant="outline"
+                              onClick={handleCancelEdit}
+                              className="flex-1 flex items-center justify-center gap-2"
+                            >
+                              <X size={16} />
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <p className="font-semibold text-gray-900 dark:text-white text-lg">
+                                {item.name}
+                              </p>
+                            </div>
+                            <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
+                              <span className="font-medium">{item.category}</span> • {item.quantity}g
                             </p>
+                            {item.confidence > 0 && (
+                              <p className="text-xs text-gray-500 dark:text-gray-400">
+                                AI detected: {item.originalLabel}
+                              </p>
+                            )}
                           </div>
-                          <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
-                            <span className="font-medium">{item.category}</span> • {item.quantity}g estimated
-                          </p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
-                            Detected as: {item.originalLabel}
-                          </p>
-                        </div>
-                        <div className="text-right ml-4">
-                          <div className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold ${
-                            item.confidence >= 60 
-                              ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                              : item.confidence >= 40
-                              ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-                              : 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200'
-                          }`}>
-                            {item.confidence}%
+                          <div className="flex items-start gap-2 ml-4">
+                            {item.confidence > 0 && (
+                              <div className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold ${
+                                item.confidence >= 60 
+                                  ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                                  : item.confidence >= 40
+                                  ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                                  : 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200'
+                              }`}>
+                                {item.confidence}%
+                              </div>
+                            )}
+                            <button
+                              onClick={() => handleEditItem(index)}
+                              className="p-2 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
+                              title="Edit item"
+                            >
+                              <Edit2 size={16} className="text-gray-600 dark:text-gray-300" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteItem(index)}
+                              className="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                              title="Delete item"
+                            >
+                              <Trash2 size={16} className="text-red-600 dark:text-red-400" />
+                            </button>
                           </div>
                         </div>
-                      </div>
+                      )}
                     </div>
                   ))}
                 </div>
                 
                 <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-4">
                   <p className="text-sm text-blue-800 dark:text-blue-200">
-                    💡 <strong>Tip:</strong> You can edit quantities before saving. AI estimates are approximate.
+                    💡 <strong>Tip:</strong> AI estimates may not be 100% accurate. Please review and edit before saving.
                   </p>
                 </div>
 
@@ -560,6 +703,7 @@ export function LogWaste() {
                   onClick={handleAiSubmit} 
                   isLoading={loading} 
                   className="w-full"
+                  disabled={editingIndex !== null}
                 >
                   <Check size={20} />
                   Confirm & Save {aiResults.items.length} Item{aiResults.items.length > 1 ? 's' : ''}
