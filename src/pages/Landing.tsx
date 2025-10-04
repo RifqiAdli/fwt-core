@@ -23,16 +23,27 @@ export function Landing() {
         </div>
       </nav>
 
-      <section className="bg-gradient-to-br from-green-50 to-emerald-100 dark:from-gray-900 dark:to-gray-800 py-20">
-        <div className="container mx-auto px-4 text-center">
+<section className="relative py-20 min-h-[600px] flex items-center">
+        {/* Background Image with Overlay */}
+        <div className="absolute inset-0 z-0">
+          <img 
+            src="https://medialibraryfbr.s3.us-east-2.amazonaws.com/wp-content/uploads/2022/12/04191305/volunteer-food-bank.jpg" 
+            alt="Food background" 
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-gray-900/90 via-gray-900/70 to-gray-900/90"></div>
+        </div>
+
+        {/* Content */}
+        <div className="container mx-auto px-4 text-center relative z-10">
           <div className="max-w-4xl mx-auto">
             <div className="inline-flex items-center gap-3 mb-6">
               <Leaf className="w-20 h-20 text-[#4CAF50]" />
             </div>
-            <h1 className="text-5xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6">
+            <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
               Track Your Food Waste. Build Eco-Conscious Habits.
             </h1>
-            <p className="text-xl text-gray-600 dark:text-gray-300 mb-8">
+            <p className="text-xl text-gray-200 mb-8">
               Join thousands of users reducing waste and saving the planet, one meal at a time.
             </p>
             <div className="flex gap-4 justify-center flex-wrap">
@@ -41,7 +52,7 @@ export function Landing() {
                   Get Started Free
                 </Button>
               </Link>
-              <Button variant="outline" size="lg">
+              <Button variant="outline" size="lg" className="border-white text-white hover:bg-white/10">
                 Learn More
               </Button>
             </div>
