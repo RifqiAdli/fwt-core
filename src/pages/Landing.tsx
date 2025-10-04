@@ -23,7 +23,7 @@ export function Landing() {
         </div>
       </nav>
 
-<section className="relative py-20 min-h-[600px] flex items-center">
+      <section className="relative py-20 min-h-[600px] flex items-center">
         {/* Background Image with Overlay */}
         <div className="absolute inset-0 z-0">
           <img 
@@ -198,55 +198,35 @@ export function Landing() {
           <p className="text-xl mb-8 opacity-90">
             Join FOOPTRA today and start your journey to zero waste
           </p>
-          <Link to="/register">
-            <Button variant="secondary" size="lg" className="bg-white text-[#4CAF50] hover:bg-gray-100">
-              Get Started Free
-            </Button>
-          </Link>
+          <div className="flex justify-center">
+            <Link to="/register">
+              <button className="bg-white text-green-600 hover:bg-gray-100 px-8 py-3 rounded-lg text-lg font-semibold transition-colors">
+                Get Started Free
+              </button>
+            </Link>
+          </div>
         </div>
       </section>
 
-      <footer className="bg-gray-900 text-gray-300 py-12">
+      <footer className="bg-gray-900 text-gray-300 py-8">
         <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-4 gap-8 mb-8">
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <Leaf className="w-6 h-6 text-[#4CAF50]" />
-                <span className="text-xl font-bold text-white">FOOPTRA</span>
-              </div>
-              <p className="text-sm">Building eco-conscious eating habits, one meal at a time.</p>
+          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+            <div className="flex items-center gap-2">
+              <Leaf className="w-6 h-6 text-[#4CAF50]" />
+              <span className="text-xl font-bold text-white">FOOPTRA</span>
             </div>
 
-            <div>
-              <h4 className="font-semibold text-white mb-4">Product</h4>
-              <ul className="space-y-2 text-sm">
-                <li><a href="#" className="hover:text-[#4CAF50]">Features</a></li>
-                <li><a href="#" className="hover:text-[#4CAF50]">Pricing</a></li>
-                <li><a href="#" className="hover:text-[#4CAF50]">FAQ</a></li>
-              </ul>
+            <div className="flex flex-wrap justify-center gap-6 text-sm">
+              <a href="#" className="hover:text-[#4CAF50]">Features</a>
+              <a href="#" className="hover:text-[#4CAF50]">About</a>
+              <a href="#" className="hover:text-[#4CAF50]">Contact</a>
+              <a href="#" className="hover:text-[#4CAF50]">Privacy</a>
+              <a href="#" className="hover:text-[#4CAF50]">Terms</a>
             </div>
 
-            <div>
-              <h4 className="font-semibold text-white mb-4">Company</h4>
-              <ul className="space-y-2 text-sm">
-                <li><a href="#" className="hover:text-[#4CAF50]">About</a></li>
-                <li><a href="#" className="hover:text-[#4CAF50]">Contact</a></li>
-                <li><a href="#" className="hover:text-[#4CAF50]">Blog</a></li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="font-semibold text-white mb-4">Legal</h4>
-              <ul className="space-y-2 text-sm">
-                <li><a href="#" className="hover:text-[#4CAF50]">Privacy</a></li>
-                <li><a href="#" className="hover:text-[#4CAF50]">Terms</a></li>
-                <li><a href="#" className="hover:text-[#4CAF50]">Security</a></li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="border-t border-gray-800 pt-8 text-center text-sm">
-            <p>&copy; 2025 FOOPTRA - Building Eco-Conscious Eating Habits. All rights reserved.</p>
+            <p className="text-sm text-gray-400">
+              &copy; 2025 FOOPTRA. All rights reserved.
+            </p>
           </div>
         </div>
       </footer>
