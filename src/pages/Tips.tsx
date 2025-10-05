@@ -60,6 +60,13 @@ export function Tips() {
       category: 'leftovers',
       icon: Package,
     },
+    {
+      id: 7,
+      title: 'Limbah Plastic',
+      description: 'lorem ipsum dolor',
+      category: 'cooking',
+      icon: Package,
+    },
   ];
 
   const challenges = [
