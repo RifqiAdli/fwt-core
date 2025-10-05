@@ -112,38 +112,55 @@ export function LogWaste() {
     }
   };
 
-  const categorizeFoodItem = (label: string): string => {
+  const categorizeFoodItem = (label: string): string | null => {
     const lowerLabel = label.toLowerCase();
     
     // Vegetables
     const vegetables = ['vegetable', 'lettuce', 'tomato', 'carrot', 'broccoli', 'cabbage', 
                        'spinach', 'potato', 'onion', 'pepper', 'cucumber', 'celery', 'corn',
-                       'pumpkin', 'squash', 'eggplant', 'zucchini', 'mushroom'];
+                       'pumpkin', 'squash', 'eggplant', 'zucchini', 'mushroom', 'cauliflower',
+                       'asparagus', 'bean', 'pea', 'radish', 'turnip', 'beet', 'kale', 'leek',
+                       'artichoke', 'brussels sprout', 'chard', 'collard', 'fennel', 'kohlrabi'];
     
     // Fruits
     const fruits = ['fruit', 'apple', 'banana', 'orange', 'grape', 'berry', 'melon', 'mango',
                    'pineapple', 'peach', 'pear', 'strawberry', 'watermelon', 'lemon', 'lime',
-                   'cherry', 'plum', 'kiwi', 'papaya', 'guava'];
+                   'cherry', 'plum', 'kiwi', 'papaya', 'guava', 'avocado', 'coconut', 'fig',
+                   'grapefruit', 'tangerine', 'apricot', 'nectarine', 'cantaloupe', 'honeydew',
+                   'blackberry', 'blueberry', 'raspberry', 'cranberry', 'pomegranate', 'persimmon',
+                   'dragonfruit', 'lychee', 'passion fruit', 'starfruit'];
     
     // Meat & Fish
     const meatFish = ['meat', 'chicken', 'fish', 'beef', 'pork', 'salmon', 'tuna', 'shrimp',
-                     'turkey', 'lamb', 'bacon', 'sausage', 'ham', 'steak', 'seafood'];
+                     'turkey', 'lamb', 'bacon', 'sausage', 'ham', 'steak', 'seafood', 'prawn',
+                     'crab', 'lobster', 'oyster', 'mussel', 'clam', 'squid', 'octopus', 'duck',
+                     'veal', 'venison', 'cod', 'tilapia', 'trout', 'sardine', 'anchovy', 'mackerel',
+                     'herring', 'halibut', 'mahi', 'snapper', 'bass', 'perch', 'catfish'];
     
     // Dairy
     const dairy = ['dairy', 'milk', 'cheese', 'yogurt', 'butter', 'cream', 'ice cream', 
-                  'mozzarella', 'cheddar'];
+                  'mozzarella', 'cheddar', 'parmesan', 'gouda', 'brie', 'feta', 'cottage cheese',
+                  'sour cream', 'whipped cream', 'condensed milk', 'evaporated milk', 'kefir'];
     
     // Grains
     const grains = ['bread', 'rice', 'grain', 'pasta', 'cereal', 'wheat', 'oat', 'noodle',
-                   'bagel', 'baguette', 'tortilla', 'cracker'];
+                   'bagel', 'baguette', 'tortilla', 'cracker', 'croissant', 'muffin', 'biscuit',
+                   'roll', 'pretzel', 'waffle', 'pancake', 'quinoa', 'barley', 'couscous',
+                   'bulgur', 'rye', 'macaroni', 'spaghetti', 'penne', 'linguine', 'fettuccine'];
     
     // Beverages
-    const beverages = ['drink', 'beverage', 'juice', 'soda', 'water', 'coffee', 'tea', 
-                      'wine', 'beer', 'cocktail', 'smoothie'];
+    const beverages = ['juice', 'soda', 'coffee', 'tea', 'wine', 'beer', 'cocktail', 'smoothie',
+                      'latte', 'cappuccino', 'espresso', 'mocha', 'shake', 'cola', 'sprite',
+                      'lemonade', 'punch', 'cider', 'champagne', 'liquor', 'whiskey', 'vodka',
+                      'rum', 'gin', 'brandy', 'tequila', 'margarita', 'martini', 'mojito'];
     
     // Cooked Food
     const cookedFood = ['pizza', 'burger', 'sandwich', 'soup', 'stew', 'salad', 'wrap',
-                       'burrito', 'taco', 'hot dog', 'french fries', 'fried'];
+                       'burrito', 'taco', 'hot dog', 'french fries', 'fried', 'roast', 'grilled',
+                       'baked', 'casserole', 'curry', 'stir fry', 'dumpling', 'spring roll',
+                       'empanada', 'quesadilla', 'enchilada', 'lasagna', 'ravioli', 'risotto',
+                       'paella', 'jambalaya', 'gumbo', 'chili', 'pot pie', 'meatball', 'meatloaf',
+                       'shepherd pie', 'mac and cheese', 'sushi', 'ramen', 'pho', 'pad thai'];
 
     if (vegetables.some(v => lowerLabel.includes(v))) return 'Vegetables';
     if (fruits.some(f => lowerLabel.includes(f))) return 'Fruits';
@@ -153,7 +170,8 @@ export function LogWaste() {
     if (beverages.some(b => lowerLabel.includes(b))) return 'Beverages';
     if (cookedFood.some(c => lowerLabel.includes(c))) return 'Cooked Food';
     
-    return 'Other';
+    // Return null if not a food item
+    return null;
   };
 
   const estimateQuantity = (confidence: number, className: string): number => {
@@ -229,11 +247,16 @@ export function LogWaste() {
         // Classify the image
         const predictions = await model.classify(imageRef.current, 5);
 
-        // Filter and process predictions
+        // Filter and process predictions - only accept valid food items
         const items = predictions
-          .filter((pred: any) => pred.probability > 0.15) // Lower threshold for food items
+          .filter((pred: any) => {
+            const category = categorizeFoodItem(pred.className);
+            // Only accept if it's a valid food category (not null) and has decent confidence
+            return category !== null && pred.probability > 0.20;
+          })
           .map((pred: any) => {
             const confidence = Math.round(pred.probability * 100);
+            const category = categorizeFoodItem(pred.className)!;
             const foodName = pred.className
               .split(',')[0] // Take first part if there are multiple names
               .trim()
@@ -244,14 +267,14 @@ export function LogWaste() {
             return {
               name: foodName,
               quantity: estimateQuantity(confidence, pred.className),
-              category: categorizeFoodItem(pred.className),
+              category: category,
               confidence: confidence,
               originalLabel: pred.className,
             };
           });
 
         if (items.length === 0) {
-          showToast('No food items detected with sufficient confidence. Try a clearer photo.', 'error');
+          showToast('No food items detected in the image. Please upload an image containing food waste (vegetables, fruits, meat, dairy, grains, beverages, or cooked food).', 'error');
           setLoading(false);
           return;
         }
