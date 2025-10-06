@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card'
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
-import { TrendingDown, TrendingUp, Calendar, AlertCircle, Award, Target } from 'lucide-react';
+import { TrendingDown, TrendingUp, Calendar, AlertCircle, Award, Target, Sparkles, Loader2, Copy, Check } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 
@@ -13,6 +13,11 @@ export function Analytics() {
   const [wasteLogs, setWasteLogs] = useState<any[]>([]);
   const [goals, setGoals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [aiInsights, setAiInsights] = useState<string>('');
+  const [aiLoading, setAiLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const GEMINI_API_KEY = 'AIzaSyDoaIfG4ZRH7boOaFk3YVCoSDD4ny9wq2o';
 
   useEffect(() => {
     if (user) {
@@ -61,6 +66,128 @@ export function Analytics() {
       case 'year':
         return new Date(now.setFullYear(now.getFullYear() - 1)).toISOString().split('T')[0];
     }
+  };
+
+  // AI Analysis Function
+  const generateAIInsights = async () => {
+    if (wasteLogs.length === 0) {
+      setAiInsights('No waste data available to analyze. Start logging your food waste!');
+      return;
+    }
+
+    setAiLoading(true);
+    
+    try {
+      // Prepare waste data summary
+      const totalWaste = getTotalWaste();
+      const avgDaily = getAverageDaily();
+      const [mostWastedCategory, categoryAmount] = getMostWastedCategory();
+      const [mostCommonReason] = getMostCommonReason();
+      const peakDay = getPeakWasteDay();
+      const trend = getWasteTrend();
+      
+      const categoryBreakdown = getCategoryData()
+        .map(c => `${c.category}: ${c.value}g`)
+        .join(', ');
+      
+      const reasonBreakdown = getReasonData()
+        .slice(0, 3)
+        .map(r => `${r.reason}: ${r.value}g`)
+        .join(', ');
+
+      const prompt = `As a food waste management expert, analyze the following data and provide personalized recommendations in English (maximum 350 words). Use markdown formatting for better readability:
+
+WASTE DATA (${timeRange === 'week' ? 'This Week' : timeRange === 'month' ? 'This Month' : timeRange === 'quarter' ? 'This Quarter' : 'This Year'}):
+- Total waste: ${Math.round(totalWaste)}g
+- Daily average: ${avgDaily}g
+- Trend: ${trend > 0 ? `Up ${trend}%` : trend < 0 ? `Down ${Math.abs(trend)}%` : 'Stable'}
+- Most wasted category: ${mostWastedCategory} (${Math.round(categoryAmount as number)}g)
+- Main reason: ${mostCommonReason}
+- Peak day: ${peakDay}
+- Category breakdown: ${categoryBreakdown}
+- Reason breakdown: ${reasonBreakdown}
+
+Please provide:
+
+**📊 Waste Pattern Analysis**
+2-3 sentences analyzing the key patterns and trends
+
+**💡 Actionable Recommendations**
+Provide 4-5 specific, practical tips to reduce waste. Use bullet points with clear action items.
+
+**🎯 Target for Next Period**
+Suggest a realistic, measurable goal based on current performance
+
+Use a supportive, encouraging tone. Focus on practical solutions. Use markdown formatting including **bold** for emphasis, bullet points for lists, and clear section headers.`;
+
+      const response = await fetch(
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-goog-api-key': GEMINI_API_KEY,
+          },
+          body: JSON.stringify({
+            contents: [
+              {
+                parts: [
+                  {
+                    text: prompt
+                  }
+                ]
+              }
+            ],
+            generationConfig: {
+              temperature: 0.7,
+              maxOutputTokens: 600,
+            }
+          })
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to generate AI insights');
+      }
+
+      const data = await response.json();
+      const insights = data.candidates[0].content.parts[0].text;
+      setAiInsights(insights);
+    } catch (error) {
+      console.error('AI Insights Error:', error);
+      setAiInsights('Sorry, an error occurred while generating AI insights. Please try again.');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  // Copy to clipboard function
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(aiInsights);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
+
+  // Parse markdown to HTML
+  const parseMarkdown = (text: string) => {
+    return text
+      // Bold text
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      // Italic text
+      .replace(/\*(.+?)\*/g, '<em>$1</em>')
+      // Headers
+      .replace(/^### (.+)$/gm, '<h3 class="text-lg font-semibold mt-4 mb-2 text-gray-900 dark:text-white">$1</h3>')
+      .replace(/^## (.+)$/gm, '<h2 class="text-xl font-bold mt-4 mb-2 text-gray-900 dark:text-white">$1</h2>')
+      // Bullet points
+      .replace(/^- (.+)$/gm, '<li class="ml-4">$1</li>')
+      .replace(/(<li.*<\/li>)/s, '<ul class="list-disc space-y-1 my-2">$1</ul>')
+      // Line breaks
+      .replace(/\n\n/g, '<br/><br/>')
+      .replace(/\n/g, '<br/>');
   };
 
   // Calculate statistics
@@ -174,8 +301,7 @@ export function Analytics() {
       return Math.min(100, Math.round((1 - totalWaste / goal.target_quantity) * 100));
     }
 
-    // For reduction percentage goals, compare with previous period
-    return 0; // Simplified for now
+    return 0;
   };
 
   const COLORS = ['#4CAF50', '#2196F3', '#FF9800', '#F44336', '#9C27B0', '#00BCD4', '#FFEB3B', '#795548'];
@@ -204,6 +330,77 @@ export function Analytics() {
           ))}
         </div>
       </div>
+
+      {/* AI Insights Card */}
+      <Card className="bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 border-purple-200 dark:border-purple-800">
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+              <CardTitle className="text-purple-900 dark:text-purple-100">AI-Powered Insights</CardTitle>
+            </div>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={generateAIInsights}
+              disabled={aiLoading || wasteLogs.length === 0}
+              className="bg-purple-600 hover:bg-purple-700"
+            >
+              {aiLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Analyzing...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Generate Insights
+                </>
+              )}
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {aiInsights ? (
+            <div>
+              <div className="flex justify-end mb-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={copyToClipboard}
+                  className="flex items-center gap-2"
+                >
+                  {copied ? (
+                    <>
+                      <Check className="w-4 h-4" />
+                      Copied!
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-4 h-4" />
+                      Copy Text
+                    </>
+                  )}
+                </Button>
+              </div>
+              <div 
+                className="prose prose-sm max-w-none dark:prose-invert text-gray-700 dark:text-gray-300"
+                dangerouslySetInnerHTML={{ __html: parseMarkdown(aiInsights) }}
+              />
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <Sparkles className="w-12 h-12 text-purple-400 mx-auto mb-3" />
+              <p className="text-gray-600 dark:text-gray-400 mb-2">
+                Get personalized AI analysis
+              </p>
+              <p className="text-sm text-gray-500 dark:text-gray-500">
+                Click "Generate Insights" to get AI-powered recommendations based on your waste patterns
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
