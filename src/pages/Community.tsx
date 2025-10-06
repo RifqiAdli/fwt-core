@@ -692,7 +692,7 @@ export function Community() {
                     S
                   </div>
                   <div className="flex-1">
-                    <p className="font-semibold text-gray-900 dark:text-white mb-1">Sarah Johnson</p>
+                    <p className="font-semibold text-gray-900 dark:text-white mb-1">Bapak Perkasa Gadik Puriadi, M.Pd</p>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
                       "I've reduced my food waste by 60% in just 3 months! FOOPTRA helped me understand my patterns and make better choices."
                     </p>

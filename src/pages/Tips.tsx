@@ -389,8 +389,8 @@ export function Tips() {
                   <span className="text-sm text-gray-500 dark:text-gray-400">
                     {challenge.participants.toLocaleString()} participants
                   </span>
-                  <Button variant="primary" size="sm">
-                    Accept Challenge
+                  <Button variant="primary" size="sm" className="bg-red-600 hover:bg-red-700 text-white">
+                    Finish
                   </Button>
                 </div>
               </CardContent>
