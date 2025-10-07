@@ -12,7 +12,7 @@ export function Tips() {
   const [aiResponse, setAiResponse] = useState('');
   const [isLoadingAi, setIsLoadingAi] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
-  
+
   const GEMINI_API_KEY = 'AIzaSyDoaIfG4ZRH7boOaFk3YVCoSDD4ny9wq2o';
 
   const categories = [
@@ -101,11 +101,11 @@ export function Tips() {
 
   const getAiTips = async () => {
     if (!aiQuery.trim()) return;
-    
+
     setIsLoadingAi(true);
     setAiResponse('');
     setIsCopied(false);
-    
+
     try {
       const response = await fetch(
         'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent',
@@ -124,9 +124,9 @@ export function Tips() {
           })
         }
       );
-      
+
       const data = await response.json();
-      
+
       if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
         setAiResponse(data.candidates[0].content.parts[0].text);
       } else {
@@ -154,22 +154,22 @@ export function Tips() {
     // Bold: **text** or __text__
     text = text.replace(/\*\*(.+?)\*\*/g, '<strong class="font-bold text-gray-900 dark:text-white">$1</strong>');
     text = text.replace(/__(.+?)__/g, '<strong class="font-bold text-gray-900 dark:text-white">$1</strong>');
-    
+
     // Italic: *text* or _text_
     text = text.replace(/\*(.+?)\*/g, '<em class="italic">$1</em>');
     text = text.replace(/_(.+?)_/g, '<em class="italic">$1</em>');
-    
+
     // Code: `text`
     text = text.replace(/`(.+?)`/g, '<code class="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-sm font-mono">$1</code>');
-    
+
     return text;
   };
 
   const formatAiResponse = (text) => {
     if (!text) return null;
-    
+
     const lines = text.split('\n');
-    
+
     return lines.map((line, index) => {
       // Handle headers (## or ### )
       if (line.startsWith('### ')) {
@@ -179,7 +179,7 @@ export function Tips() {
           </h4>
         );
       }
-      
+
       if (line.startsWith('## ')) {
         return (
           <h3 key={index} className="text-lg font-bold text-gray-900 dark:text-white mt-4 mb-2">
@@ -187,7 +187,7 @@ export function Tips() {
           </h3>
         );
       }
-      
+
       // Handle numbered lists
       if (/^\d+\./.test(line.trim())) {
         const content = line.replace(/^\d+\.\s*/, '');
@@ -204,7 +204,7 @@ export function Tips() {
           </div>
         );
       }
-      
+
       // Handle bullet points
       if (line.trim().startsWith('* ') || line.trim().startsWith('- ')) {
         const content = line.replace(/^[\s]*[*-]\s*/, '');
@@ -218,12 +218,12 @@ export function Tips() {
           </div>
         );
       }
-      
+
       // Empty lines
       if (line.trim() === '') {
         return <div key={index} className="h-2" />;
       }
-      
+
       // Regular paragraphs
       return (
         <p 
@@ -254,12 +254,12 @@ export function Tips() {
             </h2>
             <Badge variant="success" className="ml-auto">Powered by Gemini</Badge>
           </div>
-          
+
           <p className="text-gray-600 dark:text-gray-400">
             Get personalized tips to reduce food waste based on your situation
           </p>
-          
-          <div className="flex gap-2">
+
+          <div className="flex flex-col sm:flex-row gap-2">
             <Input
               type="text"
               placeholder="Example: I have many vegetables that are almost spoiled..."
@@ -272,6 +272,7 @@ export function Tips() {
               variant="primary" 
               onClick={getAiTips}
               disabled={isLoadingAi || !aiQuery.trim()}
+              className="w-full sm:w-auto"
             >
               {isLoadingAi ? (
                 <>
@@ -286,7 +287,7 @@ export function Tips() {
               )}
             </Button>
           </div>
-          
+
           {aiResponse && (
             <div className="mt-4 p-5 bg-white dark:bg-gray-800 rounded-lg border border-green-200 dark:border-green-700 shadow-sm">
               <div className="flex items-start justify-between mb-3">
