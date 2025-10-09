@@ -28,6 +28,7 @@ export function Community() {
   // User Profile Modal state
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [showUserModal, setShowUserModal] = useState(false);
+  const [profileGradient, setProfileGradient] = useState<string>('linear-gradient(135deg, rgb(74, 222, 128), rgb(34, 197, 94))');
 
   useEffect(() => {
     fetchLeaderboard();
@@ -295,6 +296,57 @@ export function Community() {
     }
   };
 
+  const extractDominantColor = (imageUrl: string) => {
+    const img = new Image();
+    img.crossOrigin = 'Anonymous';
+    img.src = imageUrl;
+    
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      if (!ctx) return;
+      
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.drawImage(img, 0, 0);
+      
+      try {
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+        
+        let r = 0, g = 0, b = 0;
+        let count = 0;
+        
+        // Sample pixels (every 10th pixel for performance)
+        for (let i = 0; i < data.length; i += 40) {
+          r += data[i];
+          g += data[i + 1];
+          b += data[i + 2];
+          count++;
+        }
+        
+        r = Math.floor(r / count);
+        g = Math.floor(g / count);
+        b = Math.floor(b / count);
+        
+        // Generate gradient colors - lighter and darker versions
+        const color1 = `rgb(${Math.min(255, r + 40)}, ${Math.min(255, g + 40)}, ${Math.min(255, b + 40)})`;
+        const color2 = `rgb(${Math.max(0, r - 20)}, ${Math.max(0, g - 20)}, ${Math.max(0, b - 20)})`;
+        
+        setProfileGradient(`linear-gradient(135deg, ${color1}, ${color2})`);
+      } catch (error) {
+        // Fallback if CORS issues
+        console.log('CORS error, using default gradient');
+        setProfileGradient('linear-gradient(135deg, rgb(74, 222, 128), rgb(34, 197, 94))');
+      }
+    };
+    
+    img.onerror = () => {
+      setProfileGradient('linear-gradient(135deg, rgb(74, 222, 128), rgb(34, 197, 94))');
+    };
+  };
+
   const openUserProfile = async (user: any) => {
     // Check friend status
     const { data: friendData } = await supabase
@@ -308,6 +360,14 @@ export function Community() {
       friendStatus: friendData?.status || 'none',
       friendshipId: friendData?.id || null
     });
+    
+    // Extract dominant color from avatar
+    if (user.avatar_url) {
+      extractDominantColor(user.avatar_url);
+    } else {
+      setProfileGradient('linear-gradient(135deg, rgb(74, 222, 128), rgb(34, 197, 94))');
+    }
+    
     setShowUserModal(true);
   };
 
@@ -701,8 +761,11 @@ export function Community() {
             className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full overflow-hidden transform transition-all"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header with gradient background */}
-            <div className="bg-gradient-to-r from-green-400 to-emerald-600 p-6 relative">
+            {/* Header with dynamic gradient background */}
+            <div 
+              className="p-6 relative"
+              style={{ background: profileGradient }}
+            >
               <button
                 onClick={() => setShowUserModal(false)}
                 className="absolute top-4 right-4 text-white hover:bg-white/20 rounded-full p-2 transition-colors"
