@@ -235,6 +235,14 @@ export function Tips() {
     });
   };
 
+  const handleReadMore = (tip) => {
+    setAiQuery(`Tell me more about: ${tip.title}. ${tip.description}`);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setTimeout(() => {
+      getAiTips();
+    }, 300);
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -360,7 +368,11 @@ export function Tips() {
                   </div>
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{tip.title}</h3>
                   <p className="text-gray-600 dark:text-gray-400">{tip.description}</p>
-                  <Button variant="ghost" size="sm">
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => handleReadMore(tip)}
+                  >
                     Read More
                   </Button>
                 </CardContent>
