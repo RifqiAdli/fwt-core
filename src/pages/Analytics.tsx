@@ -312,18 +312,19 @@ Use a supportive, encouraging tone. Focus on practical solutions. Use markdown f
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Analytics & Insights</h1>
-          <p className="text-gray-600 dark:text-gray-400">Deep dive into your waste patterns</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">Analytics & Insights</h1>
+          <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">Deep dive into your waste patterns</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {(['week', 'month', 'quarter', 'year'] as const).map((range) => (
             <Button
               key={range}
               variant={timeRange === range ? 'primary' : 'outline'}
               size="sm"
               onClick={() => setTimeRange(range)}
+              className="flex-1 sm:flex-none min-w-[70px]"
             >
               {range.charAt(0).toUpperCase() + range.slice(1)}
             </Button>
