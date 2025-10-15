@@ -1,6 +1,6 @@
-import { useState, FormEvent } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { Mail, Lock, Leaf } from 'lucide-react';
+import { useState, FormEvent, useEffect } from 'react';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
+import { Mail, Lock, Leaf, ArrowRight } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../components/ui/Toast';
 import { Input } from '../components/ui/Input';
@@ -16,6 +16,17 @@ export function Login() {
   const { signIn } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  // Handle SSO token from redirect
+  useEffect(() => {
+    const ssoToken = searchParams.get('sso_token');
+    if (ssoToken) {
+      // Token dari SSO sudah ada, user sudah login
+      showToast('SSO login successful!', 'success');
+      navigate('/dashboard');
+    }
+  }, [searchParams, navigate, showToast]);
 
   const validate = () => {
     const newErrors = { email: '', password: '' };
@@ -57,6 +68,12 @@ export function Login() {
       showToast('Welcome back to FOOPTRA!', 'success');
       navigate('/dashboard');
     }
+  };
+
+  const handleSSORedirect = () => {
+    const redirectUrl = encodeURIComponent(`${window.location.origin}/login`);
+    const ssoUrl = `https://sso.fooptra.com?redirect=${redirectUrl}`;
+    window.location.href = ssoUrl;
   };
 
   return (
@@ -113,6 +130,29 @@ export function Login() {
             <Button type="submit" variant="primary" className="w-full" isLoading={loading}>
               Sign In
             </Button>
+
+            {/* SSO Divider */}
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300 dark:border-gray-600"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">
+                  Or continue with
+                </span>
+              </div>
+            </div>
+
+            {/* SSO Button */}
+            <button
+              type="button"
+              onClick={handleSSORedirect}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-[#4CAF50] text-[#4CAF50] rounded-lg font-semibold hover:bg-[#4CAF50] hover:text-white transition-all duration-300"
+            >
+              <Leaf size={20} />
+              <span>Continue with FOOPTRA SSO</span>
+              <ArrowRight size={18} />
+            </button>
           </form>
 
           <div className="mt-6 text-center">

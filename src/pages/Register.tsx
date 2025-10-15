@@ -52,7 +52,7 @@ export function Register() {
       newErrors.email = 'Email is required';
       isValid = false;
     } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = 'Email is invalid';
+      newErrors.email = 'Email is invalid, please check the email correctly!';
       isValid = false;
     }
 

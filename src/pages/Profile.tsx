@@ -1,12 +1,11 @@
 import { useState, FormEvent, useRef } from 'react';
-import { Camera, Moon, Sun, Globe, Upload } from 'lucide-react';
+import { Camera, Moon, Sun, Globe } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../components/ui/Toast';
-import { supabase } from '../lib/supabase';
 
 export function Profile() {
   const { profile, updateProfile } = useAuth();
@@ -15,7 +14,9 @@ export function Profile() {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const [darkMode, setDarkMode] = useState(profile?.settings?.appearance?.theme === 'dark');
+  const [darkMode, setDarkMode] = useState(
+    profile?.settings?.appearance?.theme === 'dark'
+  );
   const [emailNotifications, setEmailNotifications] = useState(
     profile?.settings?.notifications?.email ?? true
   );
@@ -44,9 +45,9 @@ export function Profile() {
       showToast('Profile updated successfully!', 'success');
     } catch (error) {
       showToast('Failed to update profile', 'error');
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   const handleAvatarClick = () => {
@@ -57,13 +58,11 @@ export function Profile() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
     if (!file.type.startsWith('image/')) {
       showToast('Please upload an image file', 'error');
       return;
     }
 
-    // Validate file size (max 2MB for base64)
     if (file.size > 2 * 1024 * 1024) {
       showToast('Image size should be less than 2MB', 'error');
       return;
@@ -72,17 +71,18 @@ export function Profile() {
     setUploadingAvatar(true);
 
     try {
-      // Convert to base64
       const reader = new FileReader();
       
       reader.onloadend = async () => {
-        const base64String = reader.result as string;
-        
-        // Update profile with base64 avatar
-        await updateProfile({ avatar_url: base64String });
-        
-        showToast('Profile picture updated successfully!', 'success');
-        setUploadingAvatar(false);
+        try {
+          const base64String = reader.result as string;
+          await updateProfile({ avatar_url: base64String });
+          showToast('Profile picture updated successfully!', 'success');
+        } catch (error: any) {
+          showToast(error.message || 'Failed to upload profile picture', 'error');
+        } finally {
+          setUploadingAvatar(false);
+        }
       };
 
       reader.onerror = () => {
@@ -100,6 +100,7 @@ export function Profile() {
 
   const toggleDarkMode = async () => {
     const newTheme = darkMode ? 'light' : 'dark';
+    const previousValue = darkMode;
     setDarkMode(!darkMode);
 
     try {
@@ -116,7 +117,7 @@ export function Profile() {
       showToast(`Switched to ${newTheme} mode`, 'success');
     } catch (error) {
       showToast('Failed to update theme', 'error');
-      setDarkMode(!newTheme); // Revert on error
+      setDarkMode(previousValue);
     }
   };
 
@@ -137,7 +138,7 @@ export function Profile() {
       showToast(`Email notifications ${newValue ? 'enabled' : 'disabled'}`, 'success');
     } catch (error) {
       showToast('Failed to update notification settings', 'error');
-      setEmailNotifications(!newValue); // Revert on error
+      setEmailNotifications(!newValue);
     }
   };
 
@@ -158,7 +159,7 @@ export function Profile() {
       showToast(`Push notifications ${newValue ? 'enabled' : 'disabled'}`, 'success');
     } catch (error) {
       showToast('Failed to update notification settings', 'error');
-      setPushNotifications(!newValue); // Revert on error
+      setPushNotifications(!newValue);
     }
   };
 
@@ -179,7 +180,7 @@ export function Profile() {
       showToast(`Profile visibility ${newValue ? 'enabled' : 'disabled'}`, 'success');
     } catch (error) {
       showToast('Failed to update privacy settings', 'error');
-      setProfileVisibility(!newValue); // Revert on error
+      setProfileVisibility(!newValue);
     }
   };
 
@@ -200,15 +201,19 @@ export function Profile() {
       showToast(`Leaderboard visibility ${newValue ? 'enabled' : 'disabled'}`, 'success');
     } catch (error) {
       showToast('Failed to update privacy settings', 'error');
-      setShowOnLeaderboard(!newValue); // Revert on error
+      setShowOnLeaderboard(!newValue);
     }
   };
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Profile & Settings</h1>
-        <p className="text-gray-600 dark:text-gray-400">Manage your account and preferences</p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+          Profile & Settings
+        </h1>
+        <p className="text-gray-600 dark:text-gray-400">
+          Manage your account and preferences
+        </p>
       </div>
 
       <Card>
@@ -250,8 +255,12 @@ export function Profile() {
               </button>
             </div>
             <div>
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">{profile?.name}</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{profile?.email}</p>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                {profile?.name}
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                {profile?.email}
+              </p>
               <div className="flex gap-2">
                 <Badge variant="success">Level {profile?.level}</Badge>
                 <Badge variant="info">{profile?.total_points} XP</Badge>
@@ -305,20 +314,32 @@ export function Profile() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {new Date(profile?.created_at || '').toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                {profile?.created_at 
+                  ? new Date(profile.created_at).toLocaleDateString('en-US', { 
+                      month: 'short', 
+                      year: 'numeric' 
+                    })
+                  : '-'
+                }
               </p>
               <p className="text-sm text-gray-600 dark:text-gray-400">Member Since</p>
             </div>
             <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{profile?.current_streak}</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                {profile?.current_streak || 0}
+              </p>
               <p className="text-sm text-gray-600 dark:text-gray-400">Current Streak</p>
             </div>
             <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{profile?.longest_streak}</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                {profile?.longest_streak || 0}
+              </p>
               <p className="text-sm text-gray-600 dark:text-gray-400">Longest Streak</p>
             </div>
             <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{profile?.level}</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                {profile?.level || 1}
+              </p>
               <p className="text-sm text-gray-600 dark:text-gray-400">Current Level</p>
             </div>
           </div>
