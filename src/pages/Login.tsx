@@ -13,20 +13,41 @@ export function Login() {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({ email: '', password: '' });
 
-  const { signIn } = useAuth();
+  const { signIn, setSession } = useAuth(); // Pastikan AuthContext punya setSession
   const { showToast } = useToast();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
   // Handle SSO token from redirect
   useEffect(() => {
-    const ssoToken = searchParams.get('sso_token');
-    if (ssoToken) {
-      // Token dari SSO sudah ada, user sudah login
-      showToast('SSO login successful!', 'success');
-      navigate('/dashboard');
-    }
-  }, [searchParams, navigate, showToast]);
+    const handleSSOToken = async () => {
+      const ssoToken = searchParams.get('sso_token');
+      const refreshToken = searchParams.get('refresh_token');
+
+      if (ssoToken && refreshToken) {
+        try {
+          // Set session dengan token dari SSO
+          await setSession({
+            access_token: ssoToken,
+            refresh_token: refreshToken,
+          });
+
+          // Clean URL (remove tokens from URL)
+          window.history.replaceState({}, '', '/dashboard');
+
+          showToast('SSO login successful!', 'success');
+          navigate('/dashboard', { replace: true });
+        } catch (error) {
+          console.error('SSO token error:', error);
+          showToast('SSO login failed. Please try again.', 'error');
+          // Clean URL
+          window.history.replaceState({}, '', '/login');
+        }
+      }
+    };
+
+    handleSSOToken();
+  }, [searchParams, navigate, showToast, setSession]);
 
   const validate = () => {
     const newErrors = { email: '', password: '' };

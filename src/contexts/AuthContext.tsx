@@ -40,6 +40,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   updateProfile: (updates: Partial<Profile>) => Promise<void>;
   refreshProfile: () => Promise<void>;
+  setSessionFromSSO: (tokens: { access_token: string; refresh_token: string }) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -147,6 +148,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile(profileData);
   };
 
+  // NEW: Set session from SSO tokens
+  const setSessionFromSSO = async (tokens: { access_token: string; refresh_token: string }) => {
+    try {
+      console.log('Setting session from SSO tokens...');
+      
+      const { data, error } = await supabase.auth.setSession({
+        access_token: tokens.access_token,
+        refresh_token: tokens.refresh_token,
+      });
+
+      if (error) {
+        console.error('SSO set session error:', error);
+        throw error;
+      }
+
+      console.log('Session set successfully:', data.session?.user?.email);
+
+      // Update state
+      setSession(data.session);
+      setUser(data.session?.user ?? null);
+
+      // Fetch profile for the user
+      if (data.session?.user) {
+        console.log('Fetching profile for user:', data.session.user.id);
+        const profileData = await fetchProfile(data.session.user.id);
+        setProfile(profileData);
+        console.log('Profile loaded:', profileData?.name);
+      }
+    } catch (error) {
+      console.error('Failed to set session from SSO:', error);
+      throw error;
+    }
+  };
+
   const value = {
     user,
     profile,
@@ -157,6 +192,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signOut,
     updateProfile,
     refreshProfile,
+    setSessionFromSSO, // Export new function
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
