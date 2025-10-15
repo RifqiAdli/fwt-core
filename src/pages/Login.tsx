@@ -13,7 +13,7 @@ export function Login() {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({ email: '', password: '' });
 
-  const { signIn, setSession } = useAuth(); // Pastikan AuthContext punya setSession
+  const auth = useAuth(); // Get all auth functions
   const { showToast } = useToast();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -26,28 +26,45 @@ export function Login() {
 
       if (ssoToken && refreshToken) {
         try {
+          console.log('SSO tokens detected, setting session...');
+          setLoading(true);
+
+          // Check if setSessionFromSSO exists
+          if (!auth.setSessionFromSSO) {
+            console.error('setSessionFromSSO is not available in AuthContext');
+            throw new Error('SSO function not available');
+          }
+          
           // Set session dengan token dari SSO
-          await setSession({
+          await auth.setSessionFromSSO({
             access_token: ssoToken,
             refresh_token: refreshToken,
           });
 
+          console.log('SSO session set successfully');
+
           // Clean URL (remove tokens from URL)
           window.history.replaceState({}, '', '/dashboard');
 
-          showToast('SSO login successful!', 'success');
-          navigate('/dashboard', { replace: true });
+          showToast('SSO login successful! Welcome back!', 'success');
+          
+          // Small delay before navigate
+          setTimeout(() => {
+            navigate('/dashboard', { replace: true });
+          }, 500);
+
         } catch (error) {
           console.error('SSO token error:', error);
           showToast('SSO login failed. Please try again.', 'error');
           // Clean URL
           window.history.replaceState({}, '', '/login');
+          setLoading(false);
         }
       }
     };
 
     handleSSOToken();
-  }, [searchParams, navigate, showToast, setSession]);
+  }, [searchParams, navigate, showToast, auth]);
 
   const validate = () => {
     const newErrors = { email: '', password: '' };
@@ -80,7 +97,7 @@ export function Login() {
 
     setLoading(true);
 
-    const { error } = await signIn(email, password);
+    const { error } = await auth.signIn(email, password);
 
     if (error) {
       showToast(error.message || 'Failed to sign in', 'error');
@@ -94,6 +111,7 @@ export function Login() {
   const handleSSORedirect = () => {
     const redirectUrl = encodeURIComponent(`${window.location.origin}/login`);
     const ssoUrl = `https://sso.fooptra.com?redirect=${redirectUrl}`;
+    console.log('Redirecting to SSO:', ssoUrl);
     window.location.href = ssoUrl;
   };
 
@@ -120,6 +138,7 @@ export function Login() {
               onChange={(e) => setEmail(e.target.value)}
               error={errors.email}
               icon={<Mail size={20} />}
+              disabled={loading}
             />
 
             <Input
@@ -130,6 +149,7 @@ export function Login() {
               onChange={(e) => setPassword(e.target.value)}
               error={errors.password}
               icon={<Lock size={20} />}
+              disabled={loading}
             />
 
             <div className="flex items-center justify-between">
@@ -139,6 +159,7 @@ export function Login() {
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
                   className="w-4 h-4 text-[#4CAF50] border-gray-300 rounded focus:ring-[#4CAF50]"
+                  disabled={loading}
                 />
                 <span className="text-sm text-gray-600 dark:text-gray-400">Remember me</span>
               </label>
@@ -168,7 +189,8 @@ export function Login() {
             <button
               type="button"
               onClick={handleSSORedirect}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-[#4CAF50] text-[#4CAF50] rounded-lg font-semibold hover:bg-[#4CAF50] hover:text-white transition-all duration-300"
+              disabled={loading}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-[#4CAF50] text-[#4CAF50] rounded-lg font-semibold hover:bg-[#4CAF50] hover:text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Leaf size={20} />
               <span>Continue with FOOPTRA SSO</span>
