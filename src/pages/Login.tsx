@@ -20,51 +20,60 @@ export function Login() {
 
   // Handle SSO token from redirect
   useEffect(() => {
+    const ssoToken = searchParams.get('sso_token');
+    const refreshToken = searchParams.get('refresh_token');
+
+    if (!ssoToken || !refreshToken) return;
+
+    let isMounted = true;
+
     const handleSSOToken = async () => {
-      const ssoToken = searchParams.get('sso_token');
-      const refreshToken = searchParams.get('refresh_token');
+      try {
+        console.log('SSO tokens detected, setting session...');
+        setLoading(true);
 
-      if (ssoToken && refreshToken) {
-        try {
-          console.log('SSO tokens detected, setting session...');
-          setLoading(true);
-
-          // Check if setSessionFromSSO exists
-          if (!auth.setSessionFromSSO) {
-            console.error('setSessionFromSSO is not available in AuthContext');
-            throw new Error('SSO function not available');
-          }
-          
-          // Set session dengan token dari SSO
-          await auth.setSessionFromSSO({
-            access_token: ssoToken,
-            refresh_token: refreshToken,
-          });
-
-          console.log('SSO session set successfully');
-
-          // Clean URL (remove tokens from URL)
-          window.history.replaceState({}, '', '/dashboard');
-
-          showToast('SSO login successful! Welcome back!', 'success');
-          
-          // Small delay before navigate
-          setTimeout(() => {
-            navigate('/dashboard', { replace: true });
-          }, 500);
-
-        } catch (error) {
-          console.error('SSO token error:', error);
-          showToast('SSO login failed. Please try again.', 'error');
-          // Clean URL
-          window.history.replaceState({}, '', '/login');
-          setLoading(false);
+        // Check if setSessionFromSSO exists
+        if (!auth.setSessionFromSSO) {
+          throw new Error('SSO function not available');
         }
+        
+        // Set session dengan token dari SSO
+        await auth.setSessionFromSSO({
+          access_token: ssoToken,
+          refresh_token: refreshToken,
+        });
+
+        if (!isMounted) return;
+
+        console.log('SSO session set successfully');
+
+        // Clean URL first
+        window.history.replaceState({}, '', '/login');
+
+        showToast('SSO login successful! Welcome back!', 'success');
+        
+        // Navigate after short delay
+        setTimeout(() => {
+          navigate('/dashboard', { replace: true });
+        }, 300);
+
+      } catch (error) {
+        if (!isMounted) return;
+        
+        console.error('SSO token error:', error);
+        showToast('SSO login failed. Please try again.', 'error');
+        window.history.replaceState({}, '', '/login');
+        setLoading(false);
       }
     };
 
     handleSSOToken();
-  }, [searchParams, navigate, showToast, auth]);
+
+    return () => {
+      isMounted = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency - only run once on mount
 
   const validate = () => {
     const newErrors = { email: '', password: '' };
