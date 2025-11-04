@@ -260,7 +260,7 @@ export function Dashboard() {
             <p className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
               {stats.co2Saved.toFixed(1)} kg
             </p>
-            <p className="text-gray-600 dark:text-gray-400">CO₂ Emissions Saved</p>
+            <p className="text-gray-600 dark:text-gray-400">CO₂ Emissions</p>
             <div className="mt-3 w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
               <div className="bg-blue-500 h-2 rounded-full" style={{ width: '65%' }}></div>
             </div>
@@ -273,7 +273,7 @@ export function Dashboard() {
             <p className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
               {stats.waterSaved.toFixed(0)} L
             </p>
-            <p className="text-gray-600 dark:text-gray-400">Water Saved</p>
+            <p className="text-gray-600 dark:text-gray-400">Water Consumption</p>
             <div className="mt-3 w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
               <div className="bg-cyan-500 h-2 rounded-full" style={{ width: '72%' }}></div>
             </div>
@@ -286,7 +286,7 @@ export function Dashboard() {
             <p className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
               {stats.landSaved.toFixed(1)} m²
             </p>
-            <p className="text-gray-600 dark:text-gray-400">Land Saved</p>
+            <p className="text-gray-600 dark:text-gray-400">Land Wasted</p>
             <div className="mt-3 w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
               <div className="bg-green-500 h-2 rounded-full" style={{ width: '58%' }}></div>
             </div>
