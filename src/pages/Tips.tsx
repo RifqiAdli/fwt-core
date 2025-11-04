@@ -13,7 +13,7 @@ export function Tips() {
   const [isLoadingAi, setIsLoadingAi] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
 
-  const GEMINI_API_KEY = 'AIzaSyDoaIfG4ZRH7boOaFk3YVCoSDD4ny9wq2o';
+  const GEMINI_API_KEY = 'AIzaSyBhqZzI-l8ouFQQWa_HDo9jpzYLrOhJMbU';
 
   const categories = [
     { id: 'all', name: 'All Tips' },

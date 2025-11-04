@@ -17,7 +17,7 @@ export function Analytics() {
   const [aiLoading, setAiLoading] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const GEMINI_API_KEY = 'AIzaSyDoaIfG4ZRH7boOaFk3YVCoSDD4ny9wq2o';
+  const GEMINI_API_KEY = 'AIzaSyBhqZzI-l8ouFQQWa_HDo9jpzYLrOhJMbU';
 
   useEffect(() => {
     if (user) {
