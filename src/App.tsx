@@ -12,8 +12,25 @@ import { Analytics } from './pages/Analytics';
 import { Tips } from './pages/Tips';
 import { Community } from './pages/Community';
 import { Profile } from './pages/Profile';
+import { Maintenance } from './pages/Maintenance';
+
+// ─── 🔧 MAINTENANCE MODE ─────────────────────────────────────────────────────
+// Ganti true → false untuk menonaktifkan maintenance mode
+const IS_MAINTENANCE = true;
+// ─────────────────────────────────────────────────────────────────────────────
 
 function App() {
+  // Jika maintenance mode aktif, tampilkan halaman maintenance untuk semua route
+  if (IS_MAINTENANCE) {
+    return (
+      <BrowserRouter>
+        <Routes>
+          <Route path="*" element={<Maintenance />} />
+        </Routes>
+      </BrowserRouter>
+    );
+  }
+
   return (
     <BrowserRouter>
       <AuthProvider>
