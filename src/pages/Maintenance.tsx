@@ -1,16 +1,185 @@
-import { useState } from 'react';
-import { Leaf, Wrench, Mail, ArrowRight, CheckCircle } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Leaf, Wrench, Mail, ArrowRight, CheckCircle, ChevronDown } from 'lucide-react';
+
+// ── Translations ──────────────────────────────────────────────────────────────
+const LANGS = [
+  { code: 'en', label: 'English',    flag: '🇺🇸' },
+  { code: 'id', label: 'Indonesia',  flag: '🇮🇩' },
+  { code: 'es', label: 'Español',    flag: '🇪🇸' },
+  { code: 'fr', label: 'Français',   flag: '🇫🇷' },
+  { code: 'ja', label: '日本語',      flag: '🇯🇵' },
+  { code: 'ar', label: 'العربية',    flag: '🇸🇦' },
+];
+
+const T = {
+  en: {
+    badge:        'Under Maintenance',
+    headline1:    'We are currently',
+    headline2:    'updating',
+    headline3:    'everything.',
+    sub:          'FOOPTRA is undergoing scheduled maintenance to deliver a better, faster, and more reliable experience for you.',
+    checklist: [
+      'Performance & system speed improvements',
+      'New food waste tracking features',
+      'Stronger data security',
+    ],
+    notifyLabel:  "Notify me when we're back:",
+    placeholder:  'your@email.com',
+    notifyBtn:    'Notify Me',
+    successTitle: 'Thank you!',
+    successSub:   'We will notify you at',
+    contactLabel: 'Urgent questions?',
+    statusTitle:  'System updating',
+    statusSub:    'Back online soon',
+    footerStatus: 'Maintenance in progress — please wait a moment',
+    maintenanceBadge: 'Maintenance',
+    dir: 'ltr',
+  },
+  id: {
+    badge:        'Sedang dalam perbaikan',
+    headline1:    'Kami sedang',
+    headline2:    'memperbarui',
+    headline3:    'semuanya.',
+    sub:          'FOOPTRA sedang menjalani pemeliharaan terjadwal untuk menghadirkan pengalaman yang lebih baik, lebih cepat, dan lebih andal bagi Anda.',
+    checklist: [
+      'Peningkatan performa & kecepatan sistem',
+      'Fitur pelacakan sampah makanan yang baru',
+      'Keamanan data yang lebih kuat',
+    ],
+    notifyLabel:  'Beritahu saya saat sudah kembali:',
+    placeholder:  'email@anda.com',
+    notifyBtn:    'Beritahu Saya',
+    successTitle: 'Terima kasih!',
+    successSub:   'Kami akan memberitahu Anda di',
+    contactLabel: 'Pertanyaan mendesak?',
+    statusTitle:  'Sistem diperbarui',
+    statusSub:    'Segera kembali online',
+    footerStatus: 'Maintenance berlangsung — mohon tunggu sebentar',
+    maintenanceBadge: 'Maintenance',
+    dir: 'ltr',
+  },
+  es: {
+    badge:        'En mantenimiento',
+    headline1:    'Estamos',
+    headline2:    'actualizando',
+    headline3:    'todo.',
+    sub:          'FOOPTRA está en mantenimiento programado para ofrecerte una experiencia mejor, más rápida y más confiable.',
+    checklist: [
+      'Mejoras de rendimiento y velocidad',
+      'Nuevas funciones de seguimiento de residuos',
+      'Mayor seguridad de datos',
+    ],
+    notifyLabel:  'Avísame cuando volvamos:',
+    placeholder:  'tu@email.com',
+    notifyBtn:    'Avisarme',
+    successTitle: '¡Gracias!',
+    successSub:   'Te avisaremos en',
+    contactLabel: '¿Preguntas urgentes?',
+    statusTitle:  'Sistema actualizándose',
+    statusSub:    'Volvemos pronto',
+    footerStatus: 'Mantenimiento en curso — espera un momento',
+    maintenanceBadge: 'Mantenimiento',
+    dir: 'ltr',
+  },
+  fr: {
+    badge:        'En maintenance',
+    headline1:    'Nous sommes en train de',
+    headline2:    'mettre à jour',
+    headline3:    'tout.',
+    sub:          'FOOPTRA est en maintenance planifiée pour vous offrir une expérience meilleure, plus rapide et plus fiable.',
+    checklist: [
+      'Améliorations des performances',
+      'Nouvelles fonctionnalités de suivi',
+      'Sécurité des données renforcée',
+    ],
+    notifyLabel:  'Me notifier quand nous revenons :',
+    placeholder:  'votre@email.com',
+    notifyBtn:    'Me notifier',
+    successTitle: 'Merci !',
+    successSub:   'Nous vous informerons à',
+    contactLabel: 'Questions urgentes ?',
+    statusTitle:  'Système en mise à jour',
+    statusSub:    'Bientôt de retour',
+    footerStatus: 'Maintenance en cours — veuillez patienter',
+    maintenanceBadge: 'Maintenance',
+    dir: 'ltr',
+  },
+  ja: {
+    badge:        'メンテナンス中',
+    headline1:    '現在',
+    headline2:    'アップデート中',
+    headline3:    'です。',
+    sub:          'FOOPTRAは、より良く、より速く、より信頼性の高い体験をお届けするために、定期メンテナンスを実施中です。',
+    checklist: [
+      'パフォーマンスとシステム速度の向上',
+      '新しい食品廃棄物追跡機能',
+      'データセキュリティの強化',
+    ],
+    notifyLabel:  '再開時に通知を受け取る：',
+    placeholder:  'your@email.com',
+    notifyBtn:    '通知を受け取る',
+    successTitle: 'ありがとう！',
+    successSub:   '以下のメールにお知らせします：',
+    contactLabel: 'お急ぎのご質問は？',
+    statusTitle:  'システム更新中',
+    statusSub:    'まもなく復旧',
+    footerStatus: 'メンテナンス中 — しばらくお待ちください',
+    maintenanceBadge: 'メンテナンス',
+    dir: 'ltr',
+  },
+  ar: {
+    badge:        'قيد الصيانة',
+    headline1:    'نحن نقوم حاليًا',
+    headline2:    'بتحديث',
+    headline3:    'كل شيء.',
+    sub:          'يخضع FOOPTRA لصيانة مجدولة لتقديم تجربة أفضل وأسرع وأكثر موثوقية لك.',
+    checklist: [
+      'تحسينات الأداء وسرعة النظام',
+      'ميزات جديدة لتتبع نفايات الطعام',
+      'أمان بيانات أقوى',
+    ],
+    notifyLabel:  'أخبرني عند العودة:',
+    placeholder:  'بريدك@email.com',
+    notifyBtn:    'أخبرني',
+    successTitle: 'شكرًا!',
+    successSub:   'سنخطرك على',
+    contactLabel: 'أسئلة عاجلة؟',
+    statusTitle:  'تحديث النظام',
+    statusSub:    'العودة قريبًا',
+    footerStatus: 'الصيانة جارية — يرجى الانتظار لحظة',
+    maintenanceBadge: 'صيانة',
+    dir: 'rtl',
+  },
+};
+// ─────────────────────────────────────────────────────────────────────────────
 
 export function Maintenance() {
-  const [email, setEmail] = useState('');
+  const [lang, setLang]           = useState('en'); // default: English
+  const [open, setOpen]           = useState(false);
+  const [email, setEmail]         = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const dropdownRef               = useRef(null);
+
+  const t        = T[lang];
+  const current  = LANGS.find((l) => l.code === lang);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handler = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
   const handleNotify = () => {
     if (email.trim()) setSubmitted(true);
   };
 
   return (
-    <div style={{ fontFamily: "'Inter', sans-serif" }} className="min-h-screen bg-[#f8faf8] flex flex-col">
+    <div dir={t.dir} style={{ fontFamily: "'Inter', sans-serif" }} className="min-h-screen bg-[#f8faf8] flex flex-col">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Sora:wght@600;700;800&display=swap');
 
@@ -32,6 +201,10 @@ export function Maintenance() {
           0%, 100% { opacity: 1; transform: scale(1); }
           50%       { opacity: 0.4; transform: scale(0.8); }
         }
+        @keyframes dropIn {
+          from { opacity: 0; transform: translateY(-6px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
 
         .float    { animation: float 5s ease-in-out infinite; }
         .fade-1   { animation: fadeUp 0.6s ease both 0.10s; }
@@ -41,6 +214,7 @@ export function Maintenance() {
         .fade-5   { animation: fadeUp 0.6s ease both 0.70s; }
         .spin-cw  { animation: spin-cw  18s linear infinite; }
         .spin-ccw { animation: spin-ccw 12s linear infinite; }
+        .drop-in  { animation: dropIn 0.15s ease both; }
 
         .shimmer-text {
           background: linear-gradient(90deg, #4CAF50, #81C784, #2E7D32, #4CAF50);
@@ -60,16 +234,22 @@ export function Maintenance() {
                       0 4px 16px rgba(76,175,80,0.08),
                       0 0 0 1px rgba(76,175,80,0.08);
         }
+        .dropdown-shadow {
+          box-shadow: 0 4px 24px rgba(0,0,0,0.10), 0 0 0 1px rgba(0,0,0,0.05);
+        }
 
         .input-focus:focus {
           outline: none;
           border-color: #4CAF50;
           box-shadow: 0 0 0 3px rgba(76,175,80,0.12);
         }
+
+        .lang-option:hover { background: #f0fdf4; }
+        .lang-option.selected { background: #f0fdf4; color: #4CAF50; font-weight: 600; }
       `}</style>
 
       {/* ── Navbar ──────────────────────────────────────────────────────── */}
-      <nav className="w-full px-6 py-5 flex items-center justify-between border-b border-gray-100 bg-white/80 backdrop-blur-sm sticky top-0 z-10">
+      <nav className="w-full px-6 py-5 flex items-center justify-between border-b border-gray-100 bg-white/80 backdrop-blur-sm sticky top-0 z-20">
         <div className="flex items-center gap-2">
           <Leaf className="w-6 h-6 text-[#4CAF50]" />
           <span
@@ -79,9 +259,46 @@ export function Maintenance() {
             FOOPTRA
           </span>
         </div>
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-full">
-          <span className="w-2 h-2 rounded-full bg-amber-400 dot-1" />
-          <span className="text-xs font-medium text-amber-700">Maintenance</span>
+
+        <div className="flex items-center gap-3">
+          {/* Language Dropdown */}
+          <div className="relative" ref={dropdownRef}>
+            <button
+              onClick={() => setOpen((o) => !o)}
+              className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:border-[#4CAF50] hover:text-[#4CAF50] transition-all card-shadow"
+            >
+              <span className="text-base leading-none">{current.flag}</span>
+              <span className="hidden sm:inline">{current.label}</span>
+              <ChevronDown
+                className="w-3.5 h-3.5 text-gray-400 transition-transform"
+                style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}
+              />
+            </button>
+
+            {open && (
+              <div className="drop-in absolute right-0 mt-2 w-44 bg-white rounded-2xl overflow-hidden dropdown-shadow z-30">
+                {LANGS.map((l) => (
+                  <button
+                    key={l.code}
+                    onClick={() => { setLang(l.code); setOpen(false); }}
+                    className={`lang-option w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 transition-colors ${lang === l.code ? 'selected' : ''}`}
+                  >
+                    <span className="text-base">{l.flag}</span>
+                    <span>{l.label}</span>
+                    {lang === l.code && (
+                      <span className="ml-auto w-1.5 h-1.5 rounded-full bg-[#4CAF50]" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Maintenance badge */}
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-full">
+            <span className="w-2 h-2 rounded-full bg-amber-400 dot-1" />
+            <span className="text-xs font-medium text-amber-700">{t.maintenanceBadge}</span>
+          </div>
         </div>
       </nav>
 
@@ -90,40 +307,31 @@ export function Maintenance() {
         <div className="w-full max-w-5xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
 
           {/* Left — Copy */}
-          <div className="text-left">
-            {/* Badge */}
+          <div className={t.dir === 'rtl' ? 'text-right' : 'text-left'}>
             <div className="fade-1 inline-flex items-center gap-2 bg-green-50 border border-green-100 rounded-full px-4 py-1.5 mb-8">
               <Wrench className="w-3.5 h-3.5 text-[#4CAF50]" />
               <span className="text-xs font-semibold text-green-700 uppercase tracking-wider">
-                Sedang dalam perbaikan
+                {t.badge}
               </span>
             </div>
 
-            {/* Headline */}
             <h1
               style={{ fontFamily: "'Sora', sans-serif" }}
               className="fade-2 text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 leading-[1.1] mb-6"
             >
-              Kami sedang
+              {t.headline1}
               <br />
-              <span className="shimmer-text">memperbarui</span>
+              <span className="shimmer-text">{t.headline2}</span>
               <br />
-              semuanya.
+              {t.headline3}
             </h1>
 
-            {/* Sub */}
             <p className="fade-3 text-gray-500 text-base sm:text-lg leading-relaxed mb-10 max-w-md">
-              FOOPTRA sedang menjalani pemeliharaan terjadwal untuk menghadirkan
-              pengalaman yang lebih baik, lebih cepat, dan lebih andal bagi Anda.
+              {t.sub}
             </p>
 
-            {/* Checklist */}
             <div className="fade-3 space-y-3 mb-10">
-              {[
-                'Peningkatan performa & kecepatan sistem',
-                'Fitur pelacakan sampah makanan yang baru',
-                'Keamanan data yang lebih kuat',
-              ].map((item) => (
+              {t.checklist.map((item) => (
                 <div key={item} className="flex items-center gap-3">
                   <div className="w-5 h-5 rounded-full bg-green-50 border border-green-200 flex items-center justify-center flex-shrink-0">
                     <CheckCircle className="w-3.5 h-3.5 text-[#4CAF50]" />
@@ -133,17 +341,14 @@ export function Maintenance() {
               ))}
             </div>
 
-            {/* Notify form */}
             <div className="fade-4">
               {!submitted ? (
                 <div>
-                  <p className="text-sm font-medium text-gray-700 mb-3">
-                    Beritahu saya saat sudah kembali:
-                  </p>
+                  <p className="text-sm font-medium text-gray-700 mb-3">{t.notifyLabel}</p>
                   <div className="flex flex-col sm:flex-row gap-3 max-w-md">
                     <input
                       type="email"
-                      placeholder="email@anda.com"
+                      placeholder={t.placeholder}
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && handleNotify()}
@@ -153,7 +358,7 @@ export function Maintenance() {
                       onClick={handleNotify}
                       className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-[#4CAF50] hover:bg-[#43A047] text-white text-sm font-semibold rounded-xl transition-colors whitespace-nowrap"
                     >
-                      Beritahu Saya
+                      {t.notifyBtn}
                       <ArrowRight className="w-4 h-4" />
                     </button>
                   </div>
@@ -162,9 +367,9 @@ export function Maintenance() {
                 <div className="flex items-center gap-3 bg-green-50 border border-green-100 rounded-xl px-5 py-4 max-w-md">
                   <CheckCircle className="w-5 h-5 text-[#4CAF50] flex-shrink-0" />
                   <div>
-                    <p className="text-sm font-semibold text-green-800">Terima kasih!</p>
+                    <p className="text-sm font-semibold text-green-800">{t.successTitle}</p>
                     <p className="text-xs text-green-600">
-                      Kami akan memberitahu Anda di{' '}
+                      {t.successSub}{' '}
                       <span className="font-medium">{email}</span>
                     </p>
                   </div>
@@ -172,48 +377,25 @@ export function Maintenance() {
               )}
             </div>
 
-            {/* Contact */}
             <div className="fade-5 mt-8 flex items-center gap-2 text-sm text-gray-400">
               <Mail className="w-4 h-4" />
-              <span>Pertanyaan mendesak?</span>
+              <span>{t.contactLabel}</span>
               <a href="mailto:support@fooptra.com" className="text-[#4CAF50] font-medium hover:underline">
                 support@fooptra.com
               </a>
             </div>
           </div>
 
-          {/* Right — Illustration */}
+          {/* Right — Illustration (tidak diubah) */}
           <div className="fade-2 hidden lg:flex items-center justify-center">
             <div className="relative w-80 h-80">
-              {/* Outer ring CW */}
               <svg className="spin-cw absolute inset-0 w-full h-full" viewBox="0 0 320 320">
-                <circle
-                  cx="160" cy="160" r="150"
-                  fill="none" stroke="#4CAF50" strokeWidth="1"
-                  strokeOpacity="0.15" strokeDasharray="8 6"
-                />
+                <circle cx="160" cy="160" r="150" fill="none" stroke="#4CAF50" strokeWidth="1" strokeOpacity="0.15" strokeDasharray="8 6" />
               </svg>
-
-              {/* Inner ring CCW */}
-              <svg
-                className="spin-ccw absolute"
-                style={{ inset: '24px', width: 'calc(100% - 48px)', height: 'calc(100% - 48px)' }}
-                viewBox="0 0 224 224"
-              >
-                <circle
-                  cx="112" cy="112" r="104"
-                  fill="none" stroke="#4CAF50" strokeWidth="1"
-                  strokeOpacity="0.25" strokeDasharray="4 8"
-                />
+              <svg className="spin-ccw absolute" style={{ inset: '24px', width: 'calc(100% - 48px)', height: 'calc(100% - 48px)' }} viewBox="0 0 224 224">
+                <circle cx="112" cy="112" r="104" fill="none" stroke="#4CAF50" strokeWidth="1" strokeOpacity="0.25" strokeDasharray="4 8" />
               </svg>
-
-              {/* Radial glow */}
-              <div
-                className="absolute inset-0 rounded-full pointer-events-none"
-                style={{ background: 'radial-gradient(circle, rgba(76,175,80,0.10) 0%, transparent 70%)' }}
-              />
-
-              {/* Center card */}
+              <div className="absolute inset-0 rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(76,175,80,0.10) 0%, transparent 70%)' }} />
               <div className="float absolute inset-0 flex items-center justify-center">
                 <div className="w-36 h-36 rounded-3xl bg-white card-shadow flex items-center justify-center">
                   <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#4CAF50] to-[#2E7D32] flex items-center justify-center shadow-lg">
@@ -221,21 +403,11 @@ export function Maintenance() {
                   </div>
                 </div>
               </div>
-
-              {/* Orbiting dots */}
               {[0, 120, 240].map((deg, i) => (
-                <div
-                  key={deg}
-                  className="absolute w-3 h-3 rounded-full bg-[#4CAF50]"
-                  style={{
-                    top:  `calc(50% + ${Math.sin((deg * Math.PI) / 180) * 130}px - 6px)`,
-                    left: `calc(50% + ${Math.cos((deg * Math.PI) / 180) * 130}px - 6px)`,
-                    opacity: 0.3 + i * 0.2,
-                  }}
+                <div key={deg} className="absolute w-3 h-3 rounded-full bg-[#4CAF50]"
+                  style={{ top: `calc(50% + ${Math.sin((deg * Math.PI) / 180) * 130}px - 6px)`, left: `calc(50% + ${Math.cos((deg * Math.PI) / 180) * 130}px - 6px)`, opacity: 0.3 + i * 0.2 }}
                 />
               ))}
-
-              {/* Status badge */}
               <div className="absolute -bottom-4 -right-4 bg-white card-shadow rounded-2xl px-4 py-3 flex items-center gap-3">
                 <div className="flex gap-1">
                   <span className="w-2 h-2 rounded-full bg-[#4CAF50] dot-1" />
@@ -243,12 +415,10 @@ export function Maintenance() {
                   <span className="w-2 h-2 rounded-full bg-[#4CAF50] dot-3" />
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-gray-800">Sistem diperbarui</p>
-                  <p className="text-[10px] text-gray-400">Segera kembali online</p>
+                  <p className="text-xs font-semibold text-gray-800">{t.statusTitle}</p>
+                  <p className="text-[10px] text-gray-400">{t.statusSub}</p>
                 </div>
               </div>
-
-              {/* Leaf badge */}
               <div className="absolute -top-4 -left-4 bg-white card-shadow rounded-2xl p-3">
                 <Leaf className="w-6 h-6 text-[#4CAF50]" />
               </div>
@@ -266,7 +436,7 @@ export function Maintenance() {
         </div>
         <div className="flex items-center gap-1.5 text-xs text-gray-400">
           <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-          <span>Maintenance berlangsung — mohon tunggu sebentar</span>
+          <span>{t.footerStatus}</span>
         </div>
       </footer>
     </div>
