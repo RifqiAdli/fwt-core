@@ -16,7 +16,7 @@ import { Maintenance } from './pages/Maintenance';
 
 // ─── 🔧 MAINTENANCE MODE ─────────────────────────────────────────────────────
 // Ganti true → false untuk menonaktifkan maintenance mode
-const IS_MAINTENANCE = true;
+const IS_MAINTENANCE = false;
 // ─────────────────────────────────────────────────────────────────────────────
 
 function App() {
